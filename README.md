@@ -1,24 +1,78 @@
 # ft_containers
 School 42 Project. My implementation of C++ 98 STL Containers
 
-  sed -i "s#listen = 127.0.0.1:9000#listen = /var/run/php/php-fpm8.sock#g" /etc/php8/php-fpm.d/www.conf &&\
-  sed -i "s#^user = nobody#user = www-data#g" /etc/php8/php-fpm.d/www.conf &&\
-  sed -i "s#^group = nobody#group = www-data#g" /etc/php8/php-fpm.d/www.conf &&\
-  sed -i "s#^;listen.owner = nobody#listen.owner = www-data#g" /etc/php8/php-fpm.d/www.conf &&\
-  sed -i "s#^;listen.group = nobody#listen.group = www-data#g" /etc/php8/php-fpm.d/www.conf &&\
-  sed -i "s#^;listen.mode = 0660#listen.mode = 0660#g" /etc/php8/php-fpm.d/www.conf &&\
-  sed -i "s#^;env#env#g" /etc/php8/php-fpm.d/www.conf &&\
-  sed -i "s#upload_max_filesize = 2M#upload_max_filesize = 8M#g" /etc/php8/php.ini &&\
-  sed -i "s#^;opcache.enable=1#opcache.enable=1#g" /etc/php8/php.ini &&\
-  sed -i "s#^;opcache.interned_strings_buffer=8#opcache.interned_strings_buffer=32#g" /etc/php8/php.ini &&\
-  sed -i "s#^;opcache.max_accelerated_files=10000#opcache.max_accelerated_files=25000#g" /etc/php8/php.ini &&\
-  sed -i "s#^;opcache.memory_consumption=128#opcache.memory_consumption=256#g" /etc/php8/php.ini &&\
-  sed -i "s#^;opcache.save_comments=1#opcache.save_comments=1#g" /etc/php8/php.ini &&\
-  sed -i "s#^;opcache.revalidate_freq=2#opcache.revalidate_freq=30#g" /etc/php8/php.ini &&\
-  echo 'apc.enable_cli=1' >> /etc/php8/conf.d/apcu.ini &&\
-  deluser "$(grep ':33:' /etc/passwd | awk -F ':' '{print $1}')" || true &&\
-  delgroup "$(grep '^www-data:' /etc/group | awk -F ':' '{print $1}')" || true &&\
-  mkdir /var/www &&\
-  addgroup -g 33 www-data &&\
-  adduser -D -u 33 -G www-data -s /sbin/nologin -H -h /var/www www-data &&\
-  chown -R www-data:www-data /var/www
+
+
+
+
+#!/bin/sh
+
+# set default env vars
+MAX_SIZE=${MAX_SIZE:-8}
+MAX_CHILDREN=${MAX_CHILDREN:-5}
+MEMORY_LIMIT=${MEMORY_LIMIT:-128}
+LISTEN=${LISTEN:-socket}
+
+# make sure /run/php exists
+if [ ! -d /run/php ]
+then
+  mkdir /run/php
+fi
+
+# check to see which version of php8.x we have
+if [ -d /etc/php8 ]
+then
+  # php8
+  PHP_VER="php8"
+  SOCKFILE="php-fpm8.sock"
+elif [ -d /etc/php81 ]
+then
+  # php81
+  PHP_VER="php81"
+  SOCKFILE="php-fpm81.sock"
+else
+  echo "ERROR: unknown php version!"
+  exit 1
+fi
+
+# only configure once
+if [ ! -f /tmp/configured ]
+then
+  if [ ! "${MAX_SIZE}" = "8" ]
+  then
+    echo "Setting 'post_max_size' and 'upload_max_filesize' to '${MAX_SIZE}'"
+    sed -i "s/post_max_size = 8M/post_max_size = ${MAX_SIZE}M/g" "/etc/${PHP_VER}/php.ini"
+    sed -i "s/upload_max_filesize = 8M/upload_max_filesize = ${MAX_SIZE}M/g" "/etc/${PHP_VER}/php.ini"
+  else
+    echo "Using default value '${MAX_SIZE}' for 'post_max_size' and 'upload_max_filesize'"
+  fi
+
+  if [ ! "${MAX_CHILDREN}" = "5" ]
+  then
+    echo "Setting 'max_children' to '${MAX_CHILDREN}'"
+    sed -i "s/pm.max_children = 5/pm.max_children = ${MAX_CHILDREN}/g" "/etc/${PHP_VER}/php-fpm.d/www.conf"
+  else
+    echo "Using default value '${MAX_CHILDREN}' for 'pm.max_children'"
+  fi
+
+  if [ "${LISTEN}" = "port" ]
+  then
+    echo "Disabling UNIX socket; enabling listening on TCP port 9000"
+    sed -i "s#listen = /var/run/php/${SOCKFILE}#listen = 9000#g" "/etc/${PHP_VER}/php-fpm.d/www.conf"
+  else
+    echo "Using default value 'listen = /var/run/php/${SOCKFILE}' for 'listen'"
+  fi
+
+  if [ ! "${MEMORY_LIMIT}" = "128" ]
+  then
+    echo "Setting 'memory_limit' to '${MEMORY_LIMIT}'"
+    sed -i "s/memory_limit = 128M/memory_limit = ${MEMORY_LIMIT}M/g" "/etc/${PHP_VER}/php.ini"
+  else
+    echo "Using default value '${MEMORY_LIMIT}' for 'memory_limit'"
+  fi
+
+  touch /tmp/configured
+  echo "Configuration complete."
+fi
+
+exec "$@"
