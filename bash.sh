@@ -1,28 +1,28 @@
 #!/bin/sh
 
-# set default env vars
+# set default env vars 
 MAX_SIZE=${MAX_SIZE:-8}
 MAX_CHILDREN=${MAX_CHILDREN:-5}
 MEMORY_LIMIT=${MEMORY_LIMIT:-128}
-LISTEN=${LISTEN:-socket}
+#LISTEN=${LISTEN:-socket}
 
 # make sure /run/php exists
-if [ ! -d /run/php ]
-then
-  mkdir /run/php
-fi
+#if [ ! -d /run/php ]
+#then
+#  mkdir /run/php
+#fi
 
 # check to see which version of php8.x we have
 if [ -d /etc/php8 ]
 then
   # php8
   PHP_VER="php8"
-  SOCKFILE="php-fpm8.sock"
+#  SOCKFILE="php-fpm8.sock"
 elif [ -d /etc/php81 ]
 then
   # php81
   PHP_VER="php81"
-  SOCKFILE="php-fpm81.sock"
+#  SOCKFILE="php-fpm81.sock"
 else
   echo "ERROR: unknown php version!"
   exit 1
@@ -48,13 +48,13 @@ then
     echo "Using default value '${MAX_CHILDREN}' for 'pm.max_children'"
   fi
 
-  if [ "${LISTEN}" = "port" ]
-  then
-    echo "Disabling UNIX socket; enabling listening on TCP port 9000"
-    sed -i "s#listen = /var/run/php/${SOCKFILE}#listen = 9000#g" "/etc/${PHP_VER}/php-fpm.d/www.conf"
-  else
-    echo "Using default value 'listen = /var/run/php/${SOCKFILE}' for 'listen'"
-  fi
+  #if [ "${LISTEN}" = "port" ]
+  #then
+  #  echo "Disabling UNIX socket; enabling listening on TCP port 9000"
+  #  sed -i "s#listen = /var/run/php/${SOCKFILE}#listen = 9000#g" "/etc/${PHP_VER}/php-fpm.d/www.conf"
+  #else
+  #  echo "Using default value 'listen = /var/run/php/${SOCKFILE}' for 'listen'"
+  #fi
 
   if [ ! "${MEMORY_LIMIT}" = "128" ]
   then
