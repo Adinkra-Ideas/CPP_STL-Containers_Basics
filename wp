@@ -1,39 +1,11 @@
-#!/bin/sh
+.PHONY: kill build down
 
-LISTEN=${LISTEN:-socket}
+kill:
+	docker compose kill
 
-# make sure /run/php exists
-if [ ! -d /run/php ]
-then
-  mkdir /run/php
-fi
+build:
+	docker compose up -d --build
 
-# Get version of php8.x we have
-if [ -d /etc/php8 ]
-then
-  PHP_VER="php8"
-# SOCKFILE="php-fpm8.sock"
-elif [ -d /etc/php81 ]
-then
-  PHP_VER="php81"
-# SOCKFILE="php-fpm81.sock"
-else
-  echo "ERROR: unknown php version!"
-  exit 1
-fi
-
-# only configure once
-#if [ ! -f /tmp/configured ]
-#then
-
-  if [ "${LISTEN}" = "port" ]
-  then
-    echo "Disabling UNIX socket; enabling listening on TCP port 9000"
-    sed -i "s#listen = /var/run/php/${SOCKFILE}#listen = 9000#g" "/etc/${PHP_VER}/php-fpm.d/www.conf"
-  fi
-
-  touch /tmp/configured
-  echo "Configuration complete."
-fi
-
-exec "$@"
+down:
+	docker compose down
+  
