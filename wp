@@ -2,6 +2,12 @@
 
 LISTEN=${LISTEN:-socket}
 
+# make sure /run/php exists
+if [ ! -d /run/php ]
+then
+  mkdir /run/php
+fi
+
 # Get version of php8.x we have
 if [ -d /etc/php8 ]
 then
