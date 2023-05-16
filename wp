@@ -1,3 +1,0 @@
-srcs/.env
-buildDockerImages.sh
-stop.sh

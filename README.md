@@ -1,7 +1,3 @@
-# ft_containers
-School 42 Project. My implementation of C++ 98 STL Containers
-
-
-
-
-
+<p align="center">
+	<img src="./assets/Demo.gif" >
+</p>
